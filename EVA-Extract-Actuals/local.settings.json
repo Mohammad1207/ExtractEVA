@@ -1,0 +1,20 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsDashboard": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "AzureWebJobsSecretStorageType": "files",
+    "base_url": "https://localhost:7071",
+    //"DATABASE_NAME": "EVADEV",
+    "DATABASE_NAME": "EVA_MOHAMMAD",
+    "DATABASE_CONNECTION": "mongodb://eva-projects:YTiT8NNRNb8IrN6uhc1dlX3zlqiUc7TafHFez18b0VP7VVKWfAWqBHUc88lGKiWiCGs2zsdfLUw6VLdNArlcxQ==@eva-projects.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@eva-projects@",
+    "CLIENT_LOCATION": "https://devac20.blob.core.windows.net/eva-client",
+    "OAUTH_CLIENT_ID": "640842291675-p3ba58t4jlqo0q55otg7jj4cgr4qlfb2.apps.googleusercontent.com",
+    "OAUTH_API_KEY": "AIzaSyA67KGyXWpRoTnocuiR4aQrtPsYSSvw908",
+    "SCOPE_GoogleClient": "https://www.googleapis.com/auth/drive"
+  },
+  "Host": {
+    "CORS": "*"
+  }
+}

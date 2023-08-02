@@ -18,7 +18,7 @@ namespace EVA_Extract_Actuals
             project.Name = projectInfo[0].Attributes["Name"].Value;
             project.FolderName = "Unknown";
             project.OwnerName = "Unknown";
-            project.LastSaved = DateTime.Now;
+            project.LastSaved = DateOnly.FromDateTime(DateTime.Now);
             project.RootTaskPackage = new TaskPackage();
 
             List<DurationDates> durationDates = new List<DurationDates>();
@@ -33,7 +33,7 @@ namespace EVA_Extract_Actuals
             return project;
         }
 
-        public static TaskPackage GenerateRootTaskPkg(int dispIndex, TaskPackage rootTaskPkg, XmlNode rootChild, Dictionary<DateTime, int> periodMap)
+        public static TaskPackage GenerateRootTaskPkg(int dispIndex, TaskPackage rootTaskPkg, XmlNode rootChild, Dictionary<DateOnly, int> periodMap)
         {
             rootTaskPkg.Id = ObjectId.GenerateNewId().ToString();
             rootTaskPkg.Name = rootChild.Attributes["Name"].Value;
@@ -47,7 +47,7 @@ namespace EVA_Extract_Actuals
             return rootTaskPkg;
         }
 
-        public static TaskPackage GenerateTaskAndPkg(int dispIndex, TaskPackage parentPkg, XmlNodeList children, Dictionary<DateTime, int> periodMap)
+        public static TaskPackage GenerateTaskAndPkg(int dispIndex, TaskPackage parentPkg, XmlNodeList children, Dictionary<DateOnly, int> periodMap)
         {
             foreach (XmlElement child in children)
             {
@@ -82,12 +82,18 @@ namespace EVA_Extract_Actuals
             return parentPkg;
         }
 
-        public static Task GenerateTask(int dispIndex, TaskPackage parentPkg, XmlElement child, Dictionary<DateTime, int> periodMap)
+        public static Task GenerateTask(int dispIndex, TaskPackage parentPkg, XmlElement child, Dictionary<DateOnly, int> periodMap)
         {
             var duration = child.GetAttribute("PlannedDuration");
-            var plannedStartDate = DateTime.Parse(child.GetAttribute("PlannedStartDate")).ToUniversalTime();
+            //var plannedStartDate = DateTime.Parse(child.GetAttribute("PlannedStartDate")).ToUniversalTime();
+            var plannedStartDateTime = DateTime.Parse(child.GetAttribute("PlannedStartDate")).ToUniversalTime();
+            var plannedStartDate = DateOnly.FromDateTime(plannedStartDateTime);
+
             var endDateStr = Utils.GetEndDate(plannedStartDate.ToString(), duration);
-            var plannedEndDate = DateTime.Parse(endDateStr).ToUniversalTime();
+            //var plannedEndDate = DateTime.Parse(endDateStr).ToUniversalTime();
+            var plannedEndDateTime = DateTime.Parse(endDateStr).ToUniversalTime();
+            var plannedEndDate = DateOnly.FromDateTime(plannedEndDateTime);
+            
             var forecastMethodNode = child.SelectSingleNode("ForecastMethod");
 
             Task task = new Task();
@@ -101,24 +107,23 @@ namespace EVA_Extract_Actuals
             task.PlannedCost = decimal.Parse(child.GetAttribute("PlannedCost"));
             task.PlannedDuration = duration;
             task.PlannedStartDate = plannedStartDate.ToString();
-            task.PlannedEndDate = plannedStartDate.ToString();
-            
+            task.PlannedEndDate = plannedEndDate.ToString();
             if(child.GetAttribute("Distribution") == "UserDefined") { task.Distribution.Code = "Custom"; }
             else if (child.GetAttribute("Distribution") == "FrontLoaded") { task.Distribution.Code = "Beta Front Loaded"; }
             else if (child.GetAttribute("Distribution") == "CenterLoaded") { task.Distribution.Code = "Beta Center Loaded"; }
             else if (child.GetAttribute("Distribution") == "BackLoaded") { task.Distribution.Code = "Beta Back Loaded"; }
             else { task.Distribution.Code = "Uniform"; }
 
-            DateTime startMonthDateTime = new DateTime(plannedStartDate.Year, plannedStartDate.Month, 1);
-            DateTime endMonthDateTime = new DateTime(plannedEndDate.Year, plannedEndDate.Month, 1);
-            int plannedStartPeriod = periodMap[startMonthDateTime];
-            int plannedEndPeriod = periodMap[endMonthDateTime];
+            DateOnly startMonthDate = new(plannedStartDate.Year, plannedStartDate.Month, 1);
+            DateOnly endMonthDate = new(plannedEndDate.Year, plannedEndDate.Month, 1);
+            int plannedStartPeriod = periodMap[startMonthDate];
+            int plannedEndPeriod = periodMap[endMonthDate];
 
             var actualProgs = child.SelectNodes("Actuals/Actual");
             var trueActualProg = MapTrueActualProg(actualProgs);
             Dictionary<int, decimal> customDistr = new Dictionary<int, decimal>();
 
-            task = FillActualProgress(task, startMonthDateTime, endMonthDateTime, plannedStartPeriod, plannedEndPeriod, trueActualProg);
+            task = FillActualProgress(task, startMonthDate, endMonthDate, plannedStartPeriod, plannedEndPeriod, trueActualProg);
 
             if (child.GetAttribute("Distribution") == "UserDefined") { 
                 customDistr = MapCustomDist(child.SelectNodes("CustomWeights/CustomWeight"));
@@ -134,7 +139,7 @@ namespace EVA_Extract_Actuals
             return task;
         }
  
-        public static Task FillActualProgress (Task task, DateTime startMonthDateTime, DateTime endMonthDateTime, int plannedStartPeriod, int plannedEndPeriod, Dictionary<int, TrueActualProgressEntry> trueActualProg)
+        public static Task FillActualProgress (Task task, DateOnly startMonthDate, DateOnly endMonthDate, int plannedStartPeriod, int plannedEndPeriod, Dictionary<int, TrueActualProgressEntry> trueActualProg)
         {
             List<int> actualPeriodList = new List<int>(trueActualProg.Keys);
             int actualStartPeriod = actualPeriodList.Min();
@@ -168,7 +173,7 @@ namespace EVA_Extract_Actuals
                 decimal periodWeight;
                 if (i >= plannedStartPeriod && i <= plannedEndPeriod)
                 {
-                    periodWeight = PeriodBuilder.GetPeriodWeight(i, plannedStartPeriod, plannedEndPeriod, startMonthDateTime, endMonthDateTime, task);
+                    periodWeight = PeriodBuilder.GetPeriodWeight(i, plannedStartPeriod, plannedEndPeriod, startMonthDate, endMonthDate, task);
                 }
                 else { periodWeight = 0; }
 
@@ -203,41 +208,6 @@ namespace EVA_Extract_Actuals
             return task;
         }
 
-        /*public static int CalcValidProgLen (DateTime plannedStartDate, DateTime plannedEndDate, XmlNodeList actualProgs, Dictionary<DateTime, int> periodMap)
-        {
-            int validPlannedProg = Utils.GetTotalPeriods(plannedEndDate, plannedStartDate);
-            int validActualProg;
-
-            bool progress = false;
-            int index = actualProgs.Count - 1;
-
-            while (progress == false && index > 0)
-            {
-                var currActualProg = (XmlElement)actualProgs.Item(index);
-                var currProgress = decimal.Parse(currActualProg.GetAttribute("PercentComplete"));
-                var currCost = decimal.Parse(currActualProg.GetAttribute("ActualCost"));
-
-                var prevActualProg = (XmlElement)actualProgs.Item(index - 1);
-                var prevProgress = decimal.Parse(prevActualProg.GetAttribute("PercentComplete"));
-                var prevCost = decimal.Parse(prevActualProg.GetAttribute("ActualCost"));
-
-                if (currProgress - prevProgress != 0 || currCost - prevCost != 0) { progress = true; }
-                index--;
-            }
-
-            if (progress == false)
-            {
-                var currActualProg = (XmlElement)actualProgs.Item(index);
-                var currProgress = decimal.Parse(currActualProg.GetAttribute("PercentComplete"));
-                var currCost = decimal.Parse(currActualProg.GetAttribute("ActualCost"));
-                if (currProgress != 0 || currCost != 0) { validActualProg = 1; }
-                else { validActualProg = 0; }
-            }
-            else { validActualProg = index+2; }
-
-            return Math.Max(validActualProg, validPlannedProg);
-        }*/
-
         public static Dictionary<int, decimal> MapCustomDist(XmlNodeList customWeights)
         {
             decimal plannedProg = 0;
@@ -256,6 +226,7 @@ namespace EVA_Extract_Actuals
 
             return customDist;
         }
+
         public static Dictionary<int, TrueActualProgressEntry> MapTrueActualProg(XmlNodeList actualProgs)
         {
             Dictionary<int, TrueActualProgressEntry> validActualProg = new Dictionary<int, TrueActualProgressEntry>();
@@ -324,51 +295,5 @@ namespace EVA_Extract_Actuals
 
             return validActualProg;
         }
-
-        /*public string GenerateTask(int dispIndex, TaskPackage parentPkg, XmlElement child)
-        {
-            var duration = child.GetAttribute("PlannedDuration");
-            var startDate = child.GetAttribute("PlannedStartDate");
-            var endDate = Utils.GetEndDate(startDate, duration);
-            var finishDate = Utils.AddBusinessDays(DateTime.Parse(startDate), int.Parse(duration));
-            var forecastMethodNode = child.SelectSingleNode("ForecastMethod");
-
-            Task task = new Task();
-            task.Id = ObjectId.GenerateNewId().ToString();
-            task.DisplayIndex = dispIndex.ToString();
-            task.Parent = parentPkg.Id;
-            task.ParentDisplayIndex = parentPkg.DisplayIndex;
-            task.Name = child.GetAttribute("Name");
-            task.ForecastMethod = forecastMethodNode.Attributes["ForecastSelection"].Value;
-            task.ConstantForcastValue = forecastMethodNode.Attributes["Constant"].Value.ToString();
-            task.PlannedCost = decimal.Parse(child.GetAttribute("PlannedCost"));
-            task.PlannedDuration = duration;
-            task.PlannedStartDate = startDate;
-            task.PlannedEndDate = endDate;
-            task.Distribution.Code = child.GetAttribute("Distribution");
-
-            var noOfPeriods = Utils.GetTotalPeriods(DateTime.Parse(endDate), DateTime.Parse(startDate));
-
-            var actualProgs = child.SelectNodes("Actuals/Actual");
-
-            for (int i = 0; i < actualProgs.Count; i++)
-            {
-                var actualProg = (XmlElement)actualProgs.Item(i);
-                var taskActual = new ActualProgressEntry();
-                taskActual.Period = int.Parse(actualProg.GetAttribute("Period"));
-                taskActual.Progress = decimal.Parse(actualProg.GetAttribute("PercentComplete"));
-                taskActual.ActualCost = decimal.Parse(actualProg.GetAttribute("ActualCost"));
-                taskActual.Note = actualProg.GetAttribute("Note");
-
-                task.ActualProgress.Add(taskActual);
-            }
-
-            var database = Database.GetDatabase();
-            var taskCollection = database.GetCollection<Task>("TASKS");
-            taskCollection.InsertOne(task);
-
-            return task.Id;
-        }*/
-
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Xml;
 
@@ -22,13 +23,17 @@ namespace EVA_Extract_Actuals
                 }
                 else if (objectTypeString.Contains("WorkTask"))
                 {
-                    var duration = child.GetAttribute("PlannedDuration");
-                    var startDate = child.GetAttribute("PlannedStartDate");
-                    var endDate = Utils.GetEndDate(startDate, duration);
+                    string duration = child.GetAttribute("PlannedDuration");
+                    DateTime startDateTime = DateTime.Parse(child.GetAttribute("PlannedStartDate"));
+                    DateOnly startDate = DateOnly.FromDateTime(startDateTime);
+                    string startDateStr = startDate.ToString();
+                    string endDateStr = Utils.GetEndDate(startDateStr, duration);
 
-                    DurationDates newDurationDates = new DurationDates();
-                    newDurationDates.StartDate = startDate;
-                    newDurationDates.EndDate = endDate;
+                    DurationDates newDurationDates = new()
+                    {
+                        StartDate = startDateStr,
+                        EndDate = endDateStr
+                    };
                     durationDates.Add(newDurationDates);
                 }
             }
@@ -40,25 +45,25 @@ namespace EVA_Extract_Actuals
 		/// </summary>
 		/// <param name="date">Extension target.</param>
 		/// <returns>A new DateTime object set to the end of the month.</returns>
-		internal static DateTime GetEndOfMonth(this DateTime date)
+		internal static DateOnly GetEndOfMonth(this DateOnly date)
         {
             var daysInMonth = DateTime.DaysInMonth(date.Year, date.Month);
-            var endOfMonth = new DateTime(date.Year, date.Month, daysInMonth, 23, 59, 59);
+            var endOfMonth = new DateOnly(date.Year, date.Month, daysInMonth);
             return endOfMonth;
         }
 
-        public static Dictionary<DateTime, int> GetPeriodMap(string statDateStr, string endDateStr)
+        public static Dictionary<DateOnly, int> GetPeriodMap(string statDateStr, string endDateStr)
 		{
-			DateTime projectStart = DateTime.Parse(statDateStr).ToUniversalTime();
-			DateTime projectEnd = DateTime.Parse(endDateStr).ToUniversalTime();
+			DateOnly projectStart = DateOnly.Parse(statDateStr);
+            DateOnly projectEnd = DateOnly.Parse(endDateStr);
 
-			var numPeriods = Utils.GetTotalPeriods(projectEnd, projectStart);
-			Dictionary<DateTime, int> periodsMap = new Dictionary<DateTime, int>();
+            var numPeriods = Utils.GetTotalPeriods(projectEnd, projectStart);
+			Dictionary<DateOnly, int> periodsMap = new Dictionary<DateOnly, int>();
 			var currYear = projectStart.Year;
 			var currMonth = projectStart.Month;
 			for (var i = 0; i < numPeriods; i++)
 			{
-				var currStartPeriod = new DateTime(currYear, currMonth, 1);
+				var currStartPeriod = new DateOnly(currYear, currMonth, 1);
 				periodsMap.Add(currStartPeriod, i + 1);
 
 				currMonth++;
@@ -71,23 +76,24 @@ namespace EVA_Extract_Actuals
 			return periodsMap;
 		}
 
-        public static decimal GetPeriodWeight(int period, int startPeriod, int endPeriod, DateTime startMonth, DateTime endMonth, Task task)
+        public static decimal GetPeriodWeight(int period, int startPeriod, int endPeriod, DateOnly startMonth, DateOnly endMonth, Task task)
         {
-            var plannedStartDateTime = DateTime.Parse(task.PlannedStartDate).ToUniversalTime();
-            var plannedEndDateTime = DateTime.Parse(task.PlannedEndDate).ToUniversalTime();
+            var plannedStartDate = DateOnly.Parse(task.PlannedStartDate);
+            var plannedEndDate = DateOnly.Parse(task.PlannedEndDate);
             var result = 0M;
+            
             if (startPeriod == endPeriod)
             {
                 result = 1M;
             }
             else if (period == startPeriod)
             {
-                var endOfStartMonth = plannedStartDateTime.GetEndOfMonth();
-                result = (GetWorkingDays(plannedStartDateTime, endOfStartMonth) / 23M);
+                var endOfStartMonth = plannedStartDate.GetEndOfMonth();
+                result = (GetWorkingDays(plannedStartDate, endOfStartMonth) / 23M);
             }
             else if (period == endPeriod)
             {
-                result = (GetWorkingDays(endMonth, plannedEndDateTime) / 23M);
+                result = (GetWorkingDays(endMonth, plannedEndDate) / 23M);
             }
             else
             {
@@ -99,10 +105,10 @@ namespace EVA_Extract_Actuals
             return result;
         }
 
-        private static decimal GetWorkingDays(DateTime start, DateTime end)
+        private static decimal GetWorkingDays(DateOnly start, DateOnly end)
         {
             double calcBusinessDays =
-                1 + ((end - start).TotalDays * 5 -
+                1 + ((end.DayNumber - start.DayNumber) * 5 -
                 (start.DayOfWeek - end.DayOfWeek) * 2) / 7;
 
             if (end.DayOfWeek == DayOfWeek.Saturday) calcBusinessDays--;

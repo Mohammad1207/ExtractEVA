@@ -23,7 +23,7 @@ namespace EVA_Extract_Actuals
 
         public string Id { get; set; }
 
-        public DateTime? CreatedTime { get; set; }
+        public DateOnly? CreatedTime { get; set; }
 
         public string Name { get; set; }
 

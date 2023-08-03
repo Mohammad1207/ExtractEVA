@@ -58,13 +58,13 @@ namespace EVA_Extract_Actuals
 					taskRoot.Code = string.Empty;
 
 					var child = source.ChildNodes;
-					XmlNodeList taskRootNode = source.SelectNodes("/ProjectDocument/Project/Children[1]/Child");
-                    //XmlNode taskRootNode = source.SelectSingleNode("/ProjectDocument/Project/Children[1]/Child");
+					var projectName = fileInfo1.Name;
+                    XmlNodeList taskRootNode = source.SelectNodes("/ProjectDocument/Project/Children[1]/Child");
 
                     var database = Database.GetDatabase();
                     var taskCollection = database.GetCollection<EVAProject>("EVA");
 					
-                    var project = BuildDB.GenerateProject(source, taskRootNode[0], taskRootNode);
+                    var project = BuildDB.GenerateProject(projectName, source);
                     project.CurrentHash = BuildCurrentHash(project);
                     taskCollection.InsertOne(project);
 
@@ -100,6 +100,7 @@ namespace EVA_Extract_Actuals
 				}
 			}
 		}
+
 
 		private void AssignCodes(TaskCategory root)
 		{

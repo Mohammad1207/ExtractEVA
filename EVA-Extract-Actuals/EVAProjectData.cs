@@ -14,7 +14,7 @@ namespace EVA_Extract_Actuals
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
-        public DateOnly LastSaved { get; set; }
+        public DateTime LastSaved { get; set; }
 
         public string OwnerName { get; set; }
 

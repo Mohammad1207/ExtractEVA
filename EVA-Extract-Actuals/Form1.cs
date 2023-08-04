@@ -37,7 +37,6 @@ namespace EVA_Extract_Actuals
 
                 try
                 {
-                    var taskRows = new List<TaskObject>();
                     var fileInfo1 = new FileInfo(sourceFileName);
                     XmlDocument source = new();
                     using (var inStream = fileInfo1.OpenRead())

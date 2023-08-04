@@ -17,15 +17,4 @@ namespace EVA_Extract_Actuals
 
     }
 
-    public class EVADistributionSaveModel
-    {
-
-        public string Id { get; set; }
-
-        public string Name { get; set; }
-
-        public string Distribution { get; set; }
-
-    }
-
 }

@@ -38,7 +38,8 @@ namespace EVA_Extract_Actuals
         public static TaskPackage GenerateRootTaskPkg(int dispIndex, TaskPackage rootTaskPkg, XmlNode rootChild, Dictionary<DateOnly, int> periodMap)
         {
             rootTaskPkg.Id = ObjectId.GenerateNewId().ToString();
-            rootTaskPkg.Code = rootChild.Attributes["CodeOverride"].Value;
+            rootTaskPkg.ComputedCode = "";
+            rootTaskPkg.Code = rootChild.Attributes["CodeOverride"].Value != string.Empty ? rootChild.Attributes["CodeOverride"].Value : "";
             rootTaskPkg.Name = rootChild.Attributes["Name"].Value;
             rootTaskPkg.DisplayIndex = dispIndex.ToString();
             rootTaskPkg.Parent = "";
@@ -62,7 +63,8 @@ namespace EVA_Extract_Actuals
                 {
                     TaskPackage taskPkg = new TaskPackage();
                     taskPkg.Id = ObjectId.GenerateNewId().ToString();
-                    taskPkg.Code = child.GetAttribute("CodeOverride") != string.Empty ? child.GetAttribute("CodeOverride") : string.Format(CultureInfo.CurrentCulture, "{0}.{1}", parentPkg.Code, index);
+                    taskPkg.ComputedCode = parentPkg.ComputedCode != string.Empty ? string.Format(CultureInfo.CurrentCulture, "{0}.{1}", parentPkg.ComputedCode, index) : string.Format(CultureInfo.CurrentCulture, "{0}", index);
+                    taskPkg.Code = child.GetAttribute("CodeOverride") != string.Empty ? child.GetAttribute("CodeOverride") : taskPkg.ComputedCode;
                     taskPkg.DisplayIndex = dispIndex.ToString();
                     taskPkg.Parent = parentPkg.Id;
                     taskPkg.ParentDisplayIndex = parentPkg.DisplayIndex;
@@ -103,7 +105,8 @@ namespace EVA_Extract_Actuals
             Task task = new()
             {
                 Id = ObjectId.GenerateNewId().ToString(),
-                Code = child.GetAttribute("CodeOverride") != string.Empty ? child.GetAttribute("CodeOverride") : string.Format(CultureInfo.CurrentCulture, "{0}.{1}", parentPkg.Code, index),
+                ComputedCode = parentPkg.ComputedCode != string.Empty ? string.Format(CultureInfo.CurrentCulture, "{0}.{1}", parentPkg.ComputedCode, index) : string.Format(CultureInfo.CurrentCulture, "{0}", index), 
+                Code = child.GetAttribute("CodeOverride") != string.Empty ? child.GetAttribute("CodeOverride") : string.Format(CultureInfo.CurrentCulture, "{0}.{1}", parentPkg.ComputedCode, index),
                 DisplayIndex = dispIndex.ToString(),
                 Parent = parentPkg.Id,
                 ParentDisplayIndex = parentPkg.DisplayIndex,

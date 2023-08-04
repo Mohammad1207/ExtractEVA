@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace EVA_Extract_Actuals
 {
@@ -11,6 +12,9 @@ namespace EVA_Extract_Actuals
         protected List<Analysis> _analysis;
         private readonly Dictionary<int, PlannedProgressEntry> _plansToPeriod = new Dictionary<int, PlannedProgressEntry>();
         private readonly Dictionary<int, ActualProgressEntry> _actualsToPeriod = new Dictionary<int, ActualProgressEntry>();
+
+        [BsonIgnore]
+        public string ComputedCode { get; set; }
 
         public String Code { get; set; }
         public string Id { get; set; }

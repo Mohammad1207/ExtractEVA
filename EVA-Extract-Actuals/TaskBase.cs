@@ -118,12 +118,6 @@ namespace EVA_Extract_Actuals
             }
         }
 
-        internal abstract void ReDefineProjTaskID(string parent);
-
-        internal abstract void InitializeAnalysis(int period = 0, string projectsForecastMethod = "", decimal projectsFACValue = 0M);
-
-        internal abstract void InitAnalysisPreBaseline(List<PreBaselineTaskBase> combinedPreBaselineArr);
-
         internal Analysis FindAnalysis(int period, bool historic)
         {
             var result = _analysis.Where(entry => entry.Period == period).FirstOrDefault();

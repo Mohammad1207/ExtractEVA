@@ -46,6 +46,7 @@ namespace EVA_Extract_Actuals
 
                     var child = source.ChildNodes;
                     var projectName = fileInfo1.Name;
+                    projectName = projectName.Replace(".eva", "");
                     XmlNodeList taskRootNode = source.SelectNodes("/ProjectDocument/Project/Children[1]/Child");
 
                     var database = Database.GetDatabase();

@@ -10,14 +10,14 @@ namespace EVA_Extract_Actuals
 {
     public class BuildDB
     {
-        public static EVAProject GenerateProject(string projectName, XmlDocument sourceFile)
+        public static EVAProject GenerateProject(string ownerName, string folderName, string projectName, XmlDocument sourceFile)
         {
             var project = new EVAProject();
             var projectRoot = sourceFile.SelectNodes("/ProjectDocument/Project");
             var children = sourceFile.SelectNodes("/ProjectDocument/Project/Children/Child");
             project.Name = projectName;
-            project.FolderName = "Unknown";
-            project.OwnerName = "Unknown";
+            project.FolderName = folderName;
+            project.OwnerName = ownerName;
             project.LastSaved = DateTime.Now;
             project.RootTaskPackage = new TaskPackage();
 

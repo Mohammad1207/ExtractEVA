@@ -11,8 +11,10 @@ namespace EVA_Extract_Actuals
 	public partial class Form1 : Form
 	{
 		private string sourceFileName = "";
+        private string ownerName = "";
+        private string folderName = "";
 
-		public Form1()
+        public Form1()
 		{
 			InitializeComponent();
 		}
@@ -41,14 +43,16 @@ namespace EVA_Extract_Actuals
                     var child = source.ChildNodes;
                     var projectName = fileInfo1.Name;
                     projectName = projectName.Replace(".eva", "");
-                    XmlNodeList taskRootNode = source.SelectNodes("/ProjectDocument/Project/Children[1]/Child");
 
                     var database = Database.GetDatabase();
-                    var taskCollection = database.GetCollection<EVAProject>("EVA");
+                    var EVACollection = database.GetCollection<EVAProject>("EVA");
 
-                    var project = BuildDB.GenerateProject(projectName, source);
+                    var project = BuildDB.GenerateProject(ownerName, folderName, projectName, source);
                     project.CurrentHash = BuildCurrentHash(project);
-                    taskCollection.InsertOne(project);
+                    EVACollection.InsertOne(project);
+
+                    textBox1.Text = "UNKWOWN";
+                    textBox2.Text = "UNKWOWN";
 
                     return;
                 }
@@ -61,10 +65,15 @@ namespace EVA_Extract_Actuals
 
 		}
 
-		/*private void button2_Click(object sender, EventArgs e)
-		{
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            ownerName = textBox1.Text;
+        }
 
-		}*/
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            folderName = textBox2.Text;
+        }
 
         public static string BuildCurrentHash(EVAProject project)
         {
@@ -76,11 +85,6 @@ namespace EVA_Extract_Actuals
                 hash += fullmd.ToString("X2");
             }
             return hash;
-        }
-
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-
         }
     }
 }

@@ -20,9 +20,6 @@ namespace EVA_Extract_Actuals
 
         public static IMongoDatabase GetDatabase()
         {
-            //var dbName = System.Environment.GetEnvironmentVariable("DATABASE_NAME", EnvironmentVariableTarget.Process);
-            //var dbConnection = System.Environment.GetEnvironmentVariable("DATABASE_CONNECTION", EnvironmentVariableTarget.Process);
-
             MongoClient dbClient = new MongoClient("mongodb://eva-projects:YTiT8NNRNb8IrN6uhc1dlX3zlqiUc7TafHFez18b0VP7VVKWfAWqBHUc88lGKiWiCGs2zsdfLUw6VLdNArlcxQ==@eva-projects.mongo.cosmos.azure.com:10255/?ssl=true&replicaSet=globaldb&retrywrites=false&maxIdleTimeMS=120000&appName=@eva-projects@");
 
             return dbClient.GetDatabase("EVA_NEW_DATA");
